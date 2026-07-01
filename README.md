@@ -1,6 +1,10 @@
 # mini-redis-visualizer
 A Redis-inspired in-memory key-value store built with Node.js and Angular to visualize caching, command parsing, TTL expiry, and live memory state.
 
+**Live demo:** https://mini-redis-visualizer.onrender.com
+
+(Hosted on Render's free tier, which sleeps after ~15 minutes of inactivity — the first request after a quiet period can take 30-50s to wake it back up.)
+
 ## Structure
 
 - `server/` — Express API with a real in-memory `Map` store, TTL sweep, and a `SET`/`GET`/`DEL`/`EXISTS`/`EXPIRE`/`TTL`/`KEYS`/`FLUSHALL` command parser.
