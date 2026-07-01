@@ -1,0 +1,37 @@
+.toast-stack {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 50;
+  pointer-events: none;
+}
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 250px;
+  max-width: 340px;
+  padding: 12px 15px;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-left: 4px solid;
+  border-radius: 11px;
+  box-shadow: 0 10px 30px rgba(12, 28, 36, 0.16);
+  animation: mr-toastin .28s cubic-bezier(.2, .8, .2, 1);
+  pointer-events: auto;
+}
+.toast-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.toast-msg { font-size: 13.5px; font-weight: 500; color: var(--color-ink); }

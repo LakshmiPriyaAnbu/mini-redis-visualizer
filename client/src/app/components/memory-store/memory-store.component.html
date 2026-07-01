@@ -1,0 +1,43 @@
+<div class="store">
+  <div class="store-head">
+    <div class="store-head-left">
+      <span class="store-title">Live Memory Store</span>
+      <span class="store-count">Map &middot; {{ state.keyCount() }}</span>
+    </div>
+    <span class="store-refresh">auto-refreshing every 1s</span>
+  </div>
+
+  @if (state.isEmpty()) {
+    <div class="empty">
+      <div class="empty-icon">🗄️</div>
+      <div class="empty-title">No keys in memory yet</div>
+      <p class="empty-text">Add a key using Form Mode or run a Redis-like command to see how MiniRedis stores data in memory.</p>
+      <button type="button" class="btn-demo" (click)="state.tryDemo()">Try a SET command</button>
+    </div>
+  }
+
+  @if (state.hasKeys()) {
+    <div class="table-scroll">
+      <div class="table">
+        <div class="th">Key</div>
+        <div class="th">Value</div>
+        <div class="th">TTL</div>
+        <div class="th">Status</div>
+        <div class="th th-right">Actions</div>
+        @for (row of state.rows(); track row.key) {
+          <div class="td td-key">{{ row.key }}</div>
+          <div class="td td-value">{{ row.value }}</div>
+          <div class="td td-ttl" [style.color]="row.ttlColor">{{ row.ttlText }}</div>
+          <div class="td">
+            <span class="status-pill" [style.color]="row.statusColor" [style.background]="row.statusBg" [style.border-color]="row.statusBorder">
+              <span class="status-dot" [style.background]="row.statusColor"></span>{{ row.statusText }}
+            </span>
+          </div>
+          <div class="td td-actions">
+            <button type="button" class="del-btn" title="Delete key" (click)="state.deleteKey(row.key)">&#10005;</button>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

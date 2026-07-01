@@ -1,0 +1,136 @@
+<div class="playground">
+  <div class="tabs">
+    <button
+      type="button"
+      class="tab"
+      [class.tab-active]="state.mode() === 'form'"
+      (click)="state.setMode('form')"
+    >
+      <span class="tab-emoji">🧩</span> Form Mode
+      <span class="tab-tag">beginner</span>
+    </button>
+    <button
+      type="button"
+      class="tab"
+      [class.tab-active]="state.mode() === 'command'"
+      (click)="state.setMode('command')"
+    >
+      <span class="tab-mono">&gt;_</span> Command Mode
+      <span class="tab-tag">developer</span>
+    </button>
+  </div>
+
+  @if (state.mode() === 'form') {
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Add to cache</div>
+          <div class="card-subtitle">No commands needed &mdash; fill the form and we'll map it to Redis for you.</div>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <label class="field">
+          <span class="field-label">Key</span>
+          <input
+            class="field-input"
+            [value]="state.formKey()"
+            (input)="state.setFormKey($any($event.target).value)"
+            placeholder="e.g. user:1"
+          />
+        </label>
+        <label class="field">
+          <span class="field-label">Value</span>
+          <input
+            class="field-input"
+            [value]="state.formValue()"
+            (input)="state.setFormValue($any($event.target).value)"
+            placeholder="e.g. Priya"
+          />
+        </label>
+      </div>
+
+      <div class="field-row">
+        <label class="field">
+          <span class="field-label">Expiry (TTL)</span>
+          <select class="field-select" [value]="state.expiryOption()" (change)="state.setExpiry($any($event.target).value)">
+            <option value="none">No expiry (&infin;)</option>
+            <option value="10">10 seconds</option>
+            <option value="30">30 seconds</option>
+            <option value="60">60 seconds</option>
+            <option value="custom">Custom&hellip;</option>
+          </select>
+        </label>
+        @if (state.showCustom()) {
+          <label class="field">
+            <span class="field-label">Custom seconds</span>
+            <input
+              class="field-input"
+              [value]="state.customSeconds()"
+              (input)="state.setCustom($any($event.target).value)"
+              placeholder="e.g. 45"
+            />
+          </label>
+        }
+      </div>
+
+      @if (state.hasFormError()) {
+        <div class="form-error"><span class="form-error-x">&#10005;</span>{{ state.formError() }}</div>
+      }
+
+      <div class="actions">
+        <button type="button" class="btn btn-primary" (click)="state.saveForm()">Save to Cache</button>
+        <button type="button" class="btn btn-secondary" (click)="state.clearForm()">Clear Form</button>
+        <button type="button" class="btn btn-danger" (click)="state.flushAll()">Flush All</button>
+      </div>
+
+      @if (state.hasGenerated()) {
+        <div class="generated">
+          <div class="generated-label">Generated commands</div>
+          @for (g of state.generatedCmds(); track g) {
+            <div class="generated-line"><span class="prompt">$</span> {{ g }}</div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  @if (state.mode() === 'command') {
+    <div class="terminal">
+      <div class="terminal-bar">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-amber"></span>
+        <span class="dot dot-green"></span>
+        <span class="terminal-name">miniredis-cli</span>
+      </div>
+      <div class="terminal-body">
+        <div class="terminal-hint">Connected to MiniRedis &middot; in-memory store ready<br />Type a command below, or tap an example.</div>
+
+        <div class="terminal-input-row">
+          <span class="chevron">&rsaquo;</span>
+          <input
+            class="terminal-input"
+            [value]="state.cmdInput()"
+            (input)="state.setCmdInput($any($event.target).value)"
+            (keydown)="onCmdKey($event)"
+            placeholder="Type a Redis-like command, e.g. SET user Priya"
+          />
+          <button type="button" class="btn btn-primary btn-run" (click)="state.runCmd()">Run</button>
+        </div>
+
+        <div class="chips">
+          @for (c of state.chips; track c) {
+            <button type="button" class="chip" (click)="state.fillChip(c)">{{ c }}</button>
+          }
+        </div>
+
+        @if (state.hasResult()) {
+          <div class="result" [style.border-left-color]="state.cmdResultView()!.accent">
+            <div class="result-label">{{ state.cmdResultView()!.label }}</div>
+            <div class="result-text" [style.color]="state.cmdResultView()!.accent">{{ state.cmdResultView()!.text }}</div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

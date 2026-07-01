@@ -1,0 +1,17 @@
+{
+  "name": "mini-redis-visualizer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A Redis-inspired in-memory key-value store built with Node.js and Angular to visualize caching, command parsing, TTL expiry, and live memory state.",
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "dev": "concurrently -n SERVER,CLIENT -c green,cyan \"npm run dev -w server\" \"npm start -w client\"",
+    "build": "npm run build -w client"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

@@ -1,0 +1,8 @@
+<div class="toast-stack">
+  @for (t of state.toastsView(); track t.id) {
+    <div class="toast" [style.border-left-color]="t.accent">
+      <span class="toast-icon" [style.background]="t.bg" [style.color]="t.accent">{{ t.icon }}</span>
+      <span class="toast-msg">{{ t.msg }}</span>
+    </div>
+  }
+</div>

@@ -1,0 +1,18 @@
+<section class="arch">
+  <div class="arch-glow"></div>
+  <div class="arch-content">
+    <div class="arch-kicker">How it works</div>
+    <h2 class="arch-heading">From your input to live memory</h2>
+    <div class="arch-steps">
+      @for (s of steps; track s.n) {
+        <div class="arch-step">
+          <div class="arch-step-head">
+            <span class="arch-step-n">{{ s.n }}</span>
+            <span class="arch-step-title">{{ s.title }}</span>
+          </div>
+          <p class="arch-step-desc">{{ s.desc }}</p>
+        </div>
+      }
+    </div>
+  </div>
+</section>

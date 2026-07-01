@@ -1,0 +1,13 @@
+<section class="concepts">
+  <div class="kicker">Learn the concepts</div>
+  <h2 class="heading">Redis, in five ideas</h2>
+  <div class="grid">
+    @for (c of concepts; track c.title) {
+      <div class="card">
+        <div class="icon" [style.background]="c.iconBg">{{ c.icon }}</div>
+        <div class="title">{{ c.title }}</div>
+        <p class="body">{{ c.body }}</p>
+      </div>
+    }
+  </div>
+</section>

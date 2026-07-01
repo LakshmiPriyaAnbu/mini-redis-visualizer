@@ -1,0 +1,25 @@
+<aside class="panel-wrap">
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-icon">💡</div>
+      <div>
+        <div class="panel-title">What just happened?</div>
+        <div class="panel-subtitle">Plain-English, every action</div>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div class="panel-code">{{ state.explanation().head }}</div>
+      <p class="panel-text">{{ state.explanation().body }}</p>
+    </div>
+    <div class="panel-footer">
+      <div class="panel-footer-inner">
+        <div class="panel-footer-label">Under the hood</div>
+        <div class="panel-footer-list">
+          <div class="panel-footer-item"><span class="dash">&middot;</span>Keys live in a JavaScript <span class="mono">Map</span> for O(1) reads &amp; writes.</div>
+          <div class="panel-footer-item"><span class="dash">&middot;</span>TTL keys carry an expiry timestamp checked every second.</div>
+          <div class="panel-footer-item"><span class="dash">&middot;</span>Nothing persists &mdash; refresh and the store resets.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</aside>

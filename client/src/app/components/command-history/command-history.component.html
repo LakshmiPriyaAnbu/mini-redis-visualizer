@@ -1,0 +1,25 @@
+<div class="history">
+  <div class="history-head">
+    <span class="history-title">Command History</span>
+    <span class="history-count">{{ state.historyCount() }}</span>
+  </div>
+  <div class="history-body">
+    @if (state.noHistory()) {
+      <div class="history-empty">No commands run yet.<br />Your history will appear here.</div>
+    }
+    @if (state.hasHistory()) {
+      @for (h of state.historyRows(); track h.ts + h.cmd) {
+        <div class="history-row">
+          <div class="history-row-top">
+            <div class="history-cmd">{{ h.cmd }}</div>
+            <div class="history-meta">
+              <span class="history-dot" [style.background]="h.dot"></span>
+              <span class="history-ts">{{ h.ts }}</span>
+            </div>
+          </div>
+          <div class="history-resp"><span class="arrow">&rarr;</span> <span [style.color]="h.color">{{ h.resp }}</span></div>
+        </div>
+      }
+    }
+  </div>
+</div>
