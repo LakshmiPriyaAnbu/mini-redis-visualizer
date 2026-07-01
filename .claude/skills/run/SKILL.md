@@ -45,10 +45,15 @@ npm start -w client       # Angular only, on :4200 (expects the API already runn
 3. `curl -s -X POST localhost:4000/api/command -H 'content-type: application/json' -d '{"command":"SET demo hello"}'` should return a JSON result with `status: "success"`.
 4. In the browser at :4200, use Command Mode to run `SET demo hello` then `TTL demo` — the Live Memory Store table and Command History should update within ~1s.
 
-## Building for production
+## Running as a single combined service (production / hosting)
 
 ```
-npm run build
+npm run build   # builds the Angular client to client/dist/client/browser
+npm start       # starts Express, which now also serves the built client
 ```
 
-Builds the Angular client to `client/dist/` and lint-checks the server (no separate server bundling step; run it directly with `node server/src/index.js`).
+`server/src/index.js` detects the built client and serves it (static files +
+SPA fallback) from the same Express process, on `PORT` (default 4000). This
+is the mode Render (see `render.yaml`) and most Node hosts run — one process,
+one port, one URL, so the live in-memory store and TTL sweep work exactly as
+they do in local dev (no separate stateless function runtime involved).
