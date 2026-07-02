@@ -1,7 +1,7 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { firstValueFrom, interval } from 'rxjs';
 import { RedisApiService } from './redis-api.service';
-import { CommandResult, Explanation, HistoryEntry, Mode, StoreEntry, Toast, ToastType } from './models';
+import { CommandResult, Explanation, HistoryEntry, Mode, StoreEntry, StoreValueType, Toast, ToastType } from './models';
 
 const GREEN = { color: '#12996B', bg: '#E7F6EF', border: 'rgba(18,153,107,0.24)' };
 const AMBER = { color: '#B26A00', bg: '#FDF3E3', border: 'rgba(178,106,0,0.28)' };
@@ -11,6 +11,60 @@ const TOAST_STYLE: Record<ToastType, { accent: string; bg: string; icon: string 
   error: { accent: '#C6362F', bg: '#FDECEA', icon: '✕' },
   warn: { accent: '#B26A00', bg: '#FDF3E3', icon: '⏱' },
   info: { accent: '#2563C9', bg: '#EAF1FD', icon: 'i' },
+};
+
+// One pill color per Redis data type, matching the v2 design exactly.
+const TYPE_STYLE: Record<StoreValueType, { color: string; bg: string }> = {
+  string: { color: '#2563C9', bg: '#EAF1FD' },
+  list: { color: '#6B45E0', bg: '#F1EDFB' },
+  hash: { color: '#0E7C7C', bg: '#E3F5F5' },
+  set: { color: '#B26A00', bg: '#FBF0DE' },
+};
+
+interface DtActionDef {
+  label: string;
+  op: string;
+  primary: boolean;
+}
+
+const DT_CONFIG: Record<StoreValueType, { needsField: boolean; valueLabel: string; valuePlaceholder: string; keyPlaceholder: string; actions: DtActionDef[]; defaultOp: string }> = {
+  string: {
+    needsField: false,
+    valueLabel: 'Value',
+    valuePlaceholder: 'e.g. Priya',
+    keyPlaceholder: 'e.g. name',
+    actions: [{ label: 'SET', op: 'SET', primary: true }, { label: 'GET', op: 'GET', primary: false }],
+    defaultOp: 'SET',
+  },
+  list: {
+    needsField: false,
+    valueLabel: 'Value',
+    valuePlaceholder: 'e.g. Learn Redis',
+    keyPlaceholder: 'e.g. tasks',
+    actions: [
+      { label: 'LPUSH', op: 'LPUSH', primary: true },
+      { label: 'RPUSH', op: 'RPUSH', primary: false },
+      { label: 'LPOP', op: 'LPOP', primary: false },
+      { label: 'RPOP', op: 'RPOP', primary: false },
+    ],
+    defaultOp: 'RPUSH',
+  },
+  hash: {
+    needsField: true,
+    valueLabel: 'Value',
+    valuePlaceholder: 'e.g. Priya',
+    keyPlaceholder: 'e.g. user:1',
+    actions: [{ label: 'HSET', op: 'HSET', primary: true }, { label: 'HGET', op: 'HGET', primary: false }],
+    defaultOp: 'HSET',
+  },
+  set: {
+    needsField: false,
+    valueLabel: 'Member',
+    valuePlaceholder: 'e.g. Swift',
+    keyPlaceholder: 'e.g. skills',
+    actions: [{ label: 'SADD', op: 'SADD', primary: true }, { label: 'SMEMBERS', op: 'SMEMBERS', primary: false }],
+    defaultOp: 'SADD',
+  },
 };
 
 const DEFAULT_EXPLANATION: Explanation = {
@@ -38,7 +92,20 @@ export class AppStateService {
   // Command mode fields
   readonly cmdInput = signal('');
 
-  readonly chips = ['SET name Priya', 'GET name', 'EXPIRE name 10', 'TTL name', 'KEYS', 'DEL name'];
+  readonly chips = [
+    'SET name Priya',
+    'LPUSH tasks "Learn Redis"',
+    'HSET user:1 name Priya',
+    'SADD skills Swift',
+    'TTL name',
+    'KEYS',
+  ];
+
+  // Data Types tab fields
+  readonly dtType = signal<StoreValueType>('list');
+  readonly dtKey = signal('');
+  readonly dtField = signal('');
+  readonly dtValue = signal('');
 
   private manualRemovals = new Set<string>();
 
@@ -66,16 +133,33 @@ export class AppStateService {
   readonly hasResult = computed(() => !!this.cmdResultView());
   readonly toastsView = computed(() => this.toasts().map((t) => ({ ...TOAST_STYLE[t.type], msg: t.msg, id: t.id })));
 
+  readonly dtConfig = computed(() => DT_CONFIG[this.dtType()]);
+  readonly dtPreview = computed(() => {
+    const key = this.dtKey().trim();
+    if (!key) return null;
+    const row = this.rows().find((r) => r.key === key);
+    return row ? { key: row.key, value: row.value } : null;
+  });
+  readonly dtHasPreview = computed(() => !!this.dtPreview());
+
   constructor(private api: RedisApiService) {
     this.refreshStore();
     interval(1000).subscribe(() => this.refreshStore());
   }
 
   private rowView(e: StoreEntry) {
+    const typeStyle = TYPE_STYLE[e.type];
+    const typeInfo = {
+      type: e.type,
+      typeLabel: e.type,
+      typeColor: typeStyle.color,
+      typeBg: typeStyle.bg,
+    };
     if (e.ttl == null) {
       return {
         key: e.key,
         value: e.value,
+        ...typeInfo,
         ttlText: '∞',
         ttlColor: '#98A2AC',
         statusText: 'Active',
@@ -89,6 +173,7 @@ export class AppStateService {
     return {
       key: e.key,
       value: e.value,
+      ...typeInfo,
       ttlText: `${e.ttl}s`,
       ttlColor: c.color,
       statusText: soon ? 'Expiring' : 'Active',
@@ -215,8 +300,13 @@ export class AppStateService {
 
   async exec(raw: string) {
     const trimmed = (raw || '').trim();
-    if (/^DEL\s+(\S+)/i.test(trimmed)) {
-      this.manualRemovals.add(trimmed.split(/\s+/)[1]);
+    // DEL always removes a key; LPOP/RPOP remove it once their list empties.
+    // Flagging the key here (even if it turns out not to be removed) stops
+    // the poll-diff in refreshStore() from mistaking either for a natural
+    // TTL expiry and showing the wrong toast.
+    const removalMatch = /^(DEL|LPOP|RPOP)\s+(\S+)/i.exec(trimmed);
+    if (removalMatch) {
+      this.manualRemovals.add(removalMatch[2]);
     }
     const result = await firstValueFrom(this.api.runCommand(trimmed));
     this.cmdResult.set(result);
@@ -238,5 +328,61 @@ export class AppStateService {
 
   deleteKey(key: string) {
     this.exec(`DEL ${key}`);
+  }
+
+  // ---------- DATA TYPES ----------
+  setDtType(type: StoreValueType) {
+    this.dtType.set(type);
+    this.dtField.set('');
+    this.dtValue.set('');
+  }
+  setDtKey(value: string) { this.dtKey.set(value); }
+  setDtField(value: string) { this.dtField.set(value); }
+  setDtValue(value: string) { this.dtValue.set(value); }
+
+  private quote(value: string): string {
+    return /\s/.test(value) ? `"${value}"` : value;
+  }
+
+  async runDt(op: string) {
+    const k = this.dtKey().trim();
+    const v = this.dtValue().trim();
+    const f = this.dtField().trim();
+    if (!k) { this.addToast('error', 'Key is required'); return; }
+
+    if (op === 'SET' || op === 'LPUSH' || op === 'RPUSH' || op === 'SADD') {
+      if (!v) { this.addToast('error', 'Value is required'); return; }
+      await this.exec(`${op} ${k} ${this.quote(v)}`);
+    } else if (op === 'HSET') {
+      if (!f) { this.addToast('error', 'Field is required'); return; }
+      if (!v) { this.addToast('error', 'Value is required'); return; }
+      await this.exec(`HSET ${k} ${f} ${this.quote(v)}`);
+    } else if (op === 'HGET') {
+      if (!f) { this.addToast('error', 'Field is required'); return; }
+      await this.exec(`HGET ${k} ${f}`);
+    } else {
+      await this.exec(`${op} ${k}`);
+    }
+
+    if (op === 'LPUSH' || op === 'RPUSH' || op === 'SADD' || op === 'HSET') {
+      this.dtValue.set('');
+    }
+  }
+
+  // ---------- HISTORY EXPORT ----------
+  exportHistory() {
+    const entries = this.history();
+    const blob = new Blob([JSON.stringify(entries, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `miniredis-history-${Date.now()}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    this.explanation.set({
+      head: 'EXPORT history',
+      body: `Your ${entries.length} logged command(s) were serialized to JSON and downloaded as a file — attach it to a bug report or replay it later.`,
+    });
+    this.addToast('success', `History exported (${entries.length} entries)`);
   }
 }

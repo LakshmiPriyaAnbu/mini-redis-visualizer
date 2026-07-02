@@ -1,7 +1,8 @@
 .playground { min-width: 0; }
 
 .tabs {
-  display: inline-flex;
+  display: flex;
+  flex-wrap: wrap;
   padding: 5px;
   background: #EBEEF1;
   border-radius: 13px;

@@ -1,0 +1,84 @@
+.card {
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 1px 2px rgba(12, 28, 36, 0.04), 0 8px 24px rgba(12, 28, 36, 0.05);
+}
+.card-head { margin-bottom: 16px; }
+.card-title { font-family: var(--font-display); font-weight: 600; font-size: 16px; color: var(--color-ink-strong); }
+.card-subtitle { font-size: 12.5px; color: var(--color-muted-2); }
+
+.type-picker {
+  display: flex;
+  gap: 6px;
+  padding: 4px;
+  background: #F1F3F5;
+  border-radius: 11px;
+  margin-bottom: 16px;
+}
+.type-btn {
+  flex: 1;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  color: #6A7680;
+}
+.type-btn-active { background: #fff; color: var(--color-red); box-shadow: 0 1px 3px rgba(12, 28, 36, 0.14); }
+
+.field-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; }
+.field { flex: 1; min-width: 130px; display: block; }
+.field-label { display: block; font-size: 12px; font-weight: 600; color: var(--color-ink-muted); margin-bottom: 6px; }
+.field-input {
+  width: 100%;
+  padding: 11px 13px;
+  border: 1px solid var(--color-border-input);
+  border-radius: 10px;
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  color: var(--color-ink-strong);
+  background: #FBFCFD;
+}
+.field-input:focus {
+  border-color: var(--color-red);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(255, 68, 56, 0.12);
+}
+
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.dt-btn {
+  padding: 9px 15px;
+  background: #F4F6F8;
+  color: var(--color-ink-strong);
+  border: 1px solid #E0E3E8;
+  border-radius: 9px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.dt-btn:hover { filter: brightness(0.97); }
+.dt-btn-primary { background: var(--color-red); color: #fff; border-color: var(--color-red); }
+
+.preview {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: #F4F6F8;
+  border: 1px dashed #CDD4DA;
+  border-radius: 12px;
+}
+.preview-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--color-muted-2);
+  margin-bottom: 8px;
+}
+.preview-value { font-family: var(--font-mono); font-size: 13px; color: var(--color-ink-strong); word-break: break-word; }
+.preview-key { color: var(--color-red); }

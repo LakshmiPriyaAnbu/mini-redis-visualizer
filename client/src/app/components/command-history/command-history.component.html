@@ -1,7 +1,12 @@
 <div class="history">
   <div class="history-head">
     <span class="history-title">Command History</span>
-    <span class="history-count">{{ state.historyCount() }}</span>
+    <div class="history-head-right">
+      @if (state.hasHistory()) {
+        <button type="button" class="export-btn" title="Export as JSON" (click)="state.exportHistory()">Export</button>
+      }
+      <span class="history-count">{{ state.historyCount() }}</span>
+    </div>
   </div>
   <div class="history-body">
     @if (state.noHistory()) {

@@ -1,10 +1,11 @@
 import { Component } from '@angular/core';
 import { AppStateService } from '../../core/app-state.service';
+import { DataTypesComponent } from '../data-types/data-types.component';
 
 @Component({
   selector: 'app-playground',
   standalone: true,
-  imports: [],
+  imports: [DataTypesComponent],
   templateUrl: './playground.component.html',
   styleUrl: './playground.component.css',
 })

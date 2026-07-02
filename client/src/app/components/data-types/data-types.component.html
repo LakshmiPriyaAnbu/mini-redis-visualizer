@@ -1,0 +1,68 @@
+<div class="card">
+  <div class="card-head">
+    <div class="card-title">Redis data types</div>
+    <div class="card-subtitle">Redis isn't only key &rarr; value. Try lists, hashes and sets.</div>
+  </div>
+
+  <div class="type-picker">
+    @for (t of types; track t) {
+      <button
+        type="button"
+        class="type-btn"
+        [class.type-btn-active]="state.dtType() === t"
+        (click)="state.setDtType(t)"
+      >{{ t === 'string' ? 'String' : t === 'list' ? 'List' : t === 'hash' ? 'Hash' : 'Set' }}</button>
+    }
+  </div>
+
+  <div class="field-row">
+    <label class="field">
+      <span class="field-label">Key</span>
+      <input
+        class="field-input"
+        [value]="state.dtKey()"
+        (input)="state.setDtKey($any($event.target).value)"
+        [placeholder]="state.dtConfig().keyPlaceholder"
+      />
+    </label>
+    @if (state.dtConfig().needsField) {
+      <label class="field">
+        <span class="field-label">Field</span>
+        <input
+          class="field-input"
+          [value]="state.dtField()"
+          (input)="state.setDtField($any($event.target).value)"
+          placeholder="e.g. name"
+        />
+      </label>
+    }
+    <label class="field">
+      <span class="field-label">{{ state.dtConfig().valueLabel }}</span>
+      <input
+        class="field-input"
+        [value]="state.dtValue()"
+        (input)="state.setDtValue($any($event.target).value)"
+        (keydown)="onValueKey($event)"
+        [placeholder]="state.dtConfig().valuePlaceholder"
+      />
+    </label>
+  </div>
+
+  <div class="actions">
+    @for (a of state.dtConfig().actions; track a.op) {
+      <button
+        type="button"
+        class="dt-btn"
+        [class.dt-btn-primary]="a.primary"
+        (click)="state.runDt(a.op)"
+      >{{ a.label }}</button>
+    }
+  </div>
+
+  @if (state.dtHasPreview()) {
+    <div class="preview">
+      <div class="preview-label">Current structure</div>
+      <div class="preview-value"><span class="preview-key">{{ state.dtPreview()!.key }}</span> &rarr; {{ state.dtPreview()!.value }}</div>
+    </div>
+  }
+</div>

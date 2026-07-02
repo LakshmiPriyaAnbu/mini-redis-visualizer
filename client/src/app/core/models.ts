@@ -1,5 +1,8 @@
+export type StoreValueType = 'string' | 'list' | 'hash' | 'set';
+
 export interface StoreEntry {
   key: string;
+  type: StoreValueType;
   value: string;
   ttl: number | null;
   createdAt: number;
@@ -13,7 +16,7 @@ export interface CommandResult {
   toast: { type: ToastType; message: string };
 }
 
-export type Mode = 'form' | 'command';
+export type Mode = 'form' | 'command' | 'types';
 
 export interface HistoryEntry {
   cmd: string;

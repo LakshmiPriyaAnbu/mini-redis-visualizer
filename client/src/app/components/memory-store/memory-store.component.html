@@ -25,8 +25,11 @@
         <div class="th">Status</div>
         <div class="th th-right">Actions</div>
         @for (row of state.rows(); track row.key) {
-          <div class="td td-key">{{ row.key }}</div>
-          <div class="td td-value">{{ row.value }}</div>
+          <div class="td td-key-cell">
+            <span class="td-key">{{ row.key }}</span>
+            <span class="type-pill" [style.color]="row.typeColor" [style.background]="row.typeBg">{{ row.typeLabel }}</span>
+          </div>
+          <div class="td td-value" [title]="row.value">{{ row.value }}</div>
           <div class="td td-ttl" [style.color]="row.ttlColor">{{ row.ttlText }}</div>
           <div class="td">
             <span class="status-pill" [style.color]="row.statusColor" [style.background]="row.statusBg" [style.border-color]="row.statusBorder">

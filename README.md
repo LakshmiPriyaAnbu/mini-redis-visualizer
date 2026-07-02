@@ -7,8 +7,8 @@ A Redis-inspired in-memory key-value store built with Node.js and Angular to vis
 
 ## Structure
 
-- `server/` — Express API with a real in-memory `Map` store, TTL sweep, and a `SET`/`GET`/`DEL`/`EXISTS`/`EXPIRE`/`TTL`/`KEYS`/`FLUSHALL` command parser.
-- `client/` — Angular 19 app: Form Mode / Command Mode playground, live memory table, command history, and a plain-English explanation panel.
+- `server/` — Express API with a real in-memory `Map` store, TTL sweep, and a command parser supporting strings (`SET`/`GET`/`DEL`/`EXISTS`/`EXPIRE`/`TTL`/`KEYS`/`FLUSHALL`), lists (`LPUSH`/`RPUSH`/`LPOP`/`RPOP`), hashes (`HSET`/`HGET`), and sets (`SADD`/`SMEMBERS`) — with real Redis-style `WRONGTYPE` errors when a command is used against the wrong kind of key.
+- `client/` — Angular 19 app: Form Mode / Command Mode / Data Types playground, a live memory table (each row's type shown as a colored badge under its key), command history with JSON export, and a plain-English explanation panel.
 
 ## Run it
 
@@ -81,7 +81,65 @@ press **Run** (or hit Enter), and check the `reply` box:
 You can also just click the example chips (`SET name Priya`, `GET name`, etc.)
 under the input to fill it in without typing.
 
-### 5. Error cases — confirm bad input is handled, not crashed
+### 5. Command Mode — data types (Lists, Hashes, Sets)
+
+Still in Command Mode, run these in order:
+
+| Type this | Expect the reply |
+|---|---|
+| `LPUSH queue job1` | `1` (new list length) |
+| `LPUSH queue job2 job3` | `3` — the Live Memory Store shows a small blue `LIST` badge under the `queue` key, Value shows `[job3, job2, job1]` (multi-item `LPUSH` reverses order onto the head, matching real Redis) |
+| `RPOP queue` | `"job1"` |
+| `HSET user name Priya` | `1` (field was new) — the key gets a teal `HASH` badge |
+| `HSET user name Priya` | `0` (same field, already existed) |
+| `HGET user name` | `"Priya"` |
+| `HGET user missingfield` | `(nil)` |
+| `SADD tags redis node redis` | `2` (the duplicate `redis` isn't counted twice) — the key gets an amber `SET` badge |
+| `SMEMBERS tags` | a numbered list of the set's members |
+| `LPUSH tasks "Learn Redis"` | `1` — the quoted phrase is stored as **one** list item, not two (try the matching example chip in Command Mode) |
+
+Then confirm type-safety (real Redis calls this a `WRONGTYPE` error):
+
+| Type this | Expect |
+|---|---|
+| `GET queue` (queue is a list) | `WRONGTYPE Operation against a key holding the wrong kind of value` |
+| `SET queue hello` | `OK` — `SET` is allowed to overwrite *any* key with a plain string; the badge flips to `STRING` |
+| `LPUSH queue x` (queue is now a string) | `WRONGTYPE ...` again, since it's no longer a list |
+
+And confirm `TTL`/`EXPIRE`/`DEL` work identically on non-string types: `RPUSH
+mylist a`, then `EXPIRE mylist 5`, then `TTL mylist` should return ~5, and the
+row should auto-remove itself with an "expired" toast a few seconds later —
+same as a string key. Separately, `RPUSH poptest z` then `LPOP poptest`
+(which empties and deletes the list) should show **no** "expired" toast,
+since that was an explicit action, not a timeout.
+
+### 6. Data Types tab — build structures without typing commands
+
+Click the **Data Types** tab (next to Command Mode).
+
+1. With **List** selected (the default), type `tasks` in Key and `Learn
+   Redis` in Value, then press **Enter** — this runs `RPUSH` (the Enter-key
+   default for lists), and a "Current structure" box appears showing
+   `tasks → [Learn Redis]`.
+2. Type `Write tests` in Value and click the **LPUSH** button (the red
+   primary one). Expect the preview to update to `tasks → [Write tests,
+   Learn Redis]`.
+3. Switch to **Hash**: a **Field** input appears (only for Hash). Key
+   `user:1`, Field `name`, Value `Priya`, click **HSET**. Expect
+   `user:1 → {name: Priya}`.
+4. Switch to **Set**: the last input's label changes to **Member**. Key
+   `skills`, Member `Swift`, click **SADD**. Expect `skills → {Swift}`.
+5. In every case, check the **Live Memory Store** table: each key now shows
+   a small colored badge under its name — `LIST` (blue), `HASH` (teal), or
+   `SET` (amber) — instead of a separate column.
+
+### 7. Command History — Export
+
+Once at least one command has run, an **Export** button appears next to the
+history count. Click it: expect a `.json` file to download (check your
+browser's downloads) and a "History exported" toast.
+
+### 8. Error cases — confirm bad input is handled, not crashed
 
 | Type this | Expect |
 |---|---|
@@ -96,14 +154,14 @@ under the input to fill it in without typing.
 None of these should ever show a blank screen, a browser console error dialog,
 or leave the UI stuck — that's the thing to watch for, not just the reply text.
 
-### 6. Row delete button
+### 9. Row delete button
 
 With at least one key in the table, click the **✕** button on the right of
 any row. Expect: that row disappears immediately, a Command History entry
 `DEL <key> → 1` appears, and no "expired" toast fires for it (that toast is
 reserved for keys that actually time out on their own, not ones you deleted).
 
-### 7. Live auto-refresh, across two tabs
+### 10. Live auto-refresh, across two tabs
 
 Open the app in two browser tabs side by side. Run a command in one tab
 (e.g. `SET shared hello`). Within ~1 second, the **other** tab's Live Memory

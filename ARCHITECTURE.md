@@ -60,7 +60,8 @@ mini-redis-visualizer/
 │           └── components/                 ← one folder per visual section
 │               ├── header/                 ← top bar with logo + live key count
 │               ├── hero/                   ← big headline + feature badges
-│               ├── playground/             ← the Form Mode / Command Mode UI
+│               ├── playground/             ← the Form Mode / Command Mode / Data Types tab switcher
+│               ├── data-types/             ← the point-and-click List/Hash/Set builder (Data Types tab)
 │               ├── explanation-panel/      ← "What just happened?" box
 │               ├── memory-store/           ← the live key/value table
 │               ├── command-history/        ← the running log of commands
@@ -90,13 +91,17 @@ This is the whole "database." It's a class wrapping one JavaScript `Map`:
 ```js
 class MiniRedisStore {
   constructor() {
-    this.map = new Map();   // key (string) -> { value, expiresAt, createdAt }
+    this.map = new Map();   // key (string) -> { value, type, expiresAt, createdAt }
   }
   set(key, value) { ... }
   get(key) { ... }
   del(key) { ... }
   expire(key, seconds) { ... }   // sets entry.expiresAt = Date.now() + seconds*1000
   ttl(key) { ... }               // returns seconds remaining, or -1/-2
+  peekType(key) { ... }          // returns entry.type ('string'|'list'|'hash'|'set') or null
+  lpush/rpush/lpop/rpop(...)     // list ops — value is a plain array
+  hset/hget(...)                 // hash ops — value is a plain object
+  sadd/smembers(...)             // set ops — value is a JS Set
   sweep() { ... }                // deletes any entry whose expiresAt has passed
   serialize() { ... }            // turns the Map into a plain array for the API
 }
@@ -107,13 +112,29 @@ deleted the instant it's set to expire. Instead, `sweep()` is called once a
 second (see `index.js`) and walks every entry, deleting the ones whose time
 is up. This is the same "active expiry" idea real Redis uses.
 
+Every entry also carries a `type`, because — like real Redis — a key isn't
+just "a value," it's "a value of one specific data type," and a command for
+the wrong type should fail loudly instead of silently doing the wrong thing.
+`peekType(key)` is a read-only helper that `commands.js` calls before running
+a type-sensitive command; store.js itself has no opinion on whether a
+command "should" work, it just does the data-structure operation it's asked
+for. `EXPIRE`/`TTL`/`DEL`/`EXISTS`/`KEYS`/`FLUSHALL` don't call `peekType`
+at all — they work on the key/Map level and genuinely don't care what's
+stored underneath, whether that's a string, a list, a hash, or a set.
+
 ### 2. `server/src/commands.js` — understanding a typed command
 
-This file has exactly one function: `executeCommand(store, "SET foo bar")`.
-It splits the string on whitespace, uppercases the first word, and runs a
-`switch` on it (`SET`, `GET`, `DEL`, `EXISTS`, `EXPIRE`, `TTL`, `KEYS`,
-`FLUSHALL`). Each branch calls the matching method on the `store` from step
-1, and returns an object like:
+This file's main function is `executeCommand(store, "SET foo bar")`. It first
+calls a small `tokenize()` helper that splits the string into words but
+treats a `"double-quoted phrase"` as one token — so `LPUSH tasks "Learn
+Redis"` becomes `['LPUSH', 'tasks', 'Learn Redis']`, not four separate words.
+This matters because the Data Types tab in the UI needs to send a multi-word
+list/set item as a single item. It then uppercases the first token and runs
+a `switch` on it — string commands (`SET`, `GET`, `DEL`, `EXISTS`, `EXPIRE`,
+`TTL`, `KEYS`, `FLUSHALL`), list commands (`LPUSH`, `RPUSH`, `LPOP`, `RPOP`),
+hash commands (`HSET`, `HGET`), and set commands (`SADD`, `SMEMBERS`). Each
+branch calls the matching method on the `store` from step 1, and returns an
+object like:
 
 ```js
 {
@@ -128,6 +149,18 @@ Notice `explanation` and `toast` are computed **here**, on the server — not
 guessed at by the frontend. The server is the only place that actually knows
 what happened (did the key already exist? was it deleted?), so it's the only
 place that can honestly describe it.
+
+**Type safety:** every list/hash/set/`GET` case starts by calling
+`store.peekType(key)`. If the key exists and holds a *different* type than
+the command needs, it immediately returns a `WRONGTYPE Operation against a
+key holding the wrong kind of value` error — the exact wording real Redis
+uses, so it's recognizable to anyone who's used actual `redis-cli`. The
+check is written as `if (currentType && currentType !== wantedType)` — the
+`currentType &&` part matters: a *missing* key (`peekType` returns `null`)
+must fall through to auto-vivifying a new list/hash/set, not be treated as a
+type mismatch. `SET` is the one exception with no type check at all, because
+real Redis lets `SET` overwrite a key of any existing type with a plain
+string.
 
 ### 3. `server/src/routes.js` — the API surface
 
@@ -236,10 +269,11 @@ Which component does what:
 |---|---|
 | `header` | Logo, title, and the live "N keys" pill (reads `state.keyCount()`) |
 | `hero` | Big headline + the row of feature badges (static content) |
-| `playground` | The Form Mode / Command Mode tab switcher and both modes' UI — the most interactive component |
+| `playground` | The Form Mode / Command Mode / Data Types tab switcher and the first two modes' UI — the most interactive component |
+| `data-types` | The List/Hash/Set builder: a type picker, Key/Field/Value inputs, and action buttons that build a command string and call `state.runDt()` — no new backend concept, just UI over the existing commands |
 | `explanation-panel` | The "What just happened?" box, reads `state.explanation()` |
-| `memory-store` | The live table, reads `state.rows()`, has the delete (✕) button per row |
-| `command-history` | The scrolling list of past commands, reads `state.historyRows()` |
+| `memory-store` | The live table, reads `state.rows()`, has the delete (✕) button per row and a colored type badge stacked under each key |
+| `command-history` | The scrolling list of past commands, reads `state.historyRows()`, plus an Export button that downloads the history as JSON |
 | `architecture` | The dark "How it works" band — static content describing the 5-step flow |
 | `concepts` | The 5 "Redis, in five ideas" teaching cards — static content |
 | `footer` | Page footer — static content |

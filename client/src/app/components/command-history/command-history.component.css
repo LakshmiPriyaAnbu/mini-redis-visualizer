@@ -16,7 +16,19 @@
   border-bottom: 1px solid #EEF0F3;
 }
 .history-title { font-family: var(--font-display); font-weight: 600; font-size: 15px; color: var(--color-ink-strong); }
+.history-head-right { display: flex; align-items: center; gap: 10px; }
 .history-count { font-family: var(--font-mono); font-size: 11.5px; color: var(--color-muted); }
+.export-btn {
+  padding: 4px 10px;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--color-ink-muted);
+  cursor: pointer;
+}
+.export-btn:hover { background: #F3F5F7; }
 .history-body { flex: 1; overflow-y: auto; max-height: 360px; }
 .history-empty { padding: 38px 20px; text-align: center; font-size: 13px; color: var(--color-muted); }
 .history-row { padding: 11px 20px; border-bottom: 1px solid #F4F6F8; }

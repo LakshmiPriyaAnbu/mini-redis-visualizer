@@ -18,6 +18,14 @@
       <span class="tab-mono">&gt;_</span> Command Mode
       <span class="tab-tag">developer</span>
     </button>
+    <button
+      type="button"
+      class="tab"
+      [class.tab-active]="state.mode() === 'types'"
+      (click)="state.setMode('types')"
+    >
+      <span class="tab-emoji">🧱</span> Data Types
+    </button>
   </div>
 
   @if (state.mode() === 'form') {
@@ -132,5 +140,9 @@
         }
       </div>
     </div>
+  }
+
+  @if (state.mode() === 'types') {
+    <app-data-types></app-data-types>
   }
 </div>
