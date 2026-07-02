@@ -1,4 +1,7 @@
 # mini-redis-visualizer
+
+[![CI](https://github.com/LakshmiPriyaAnbu/mini-redis-visualizer/actions/workflows/ci.yml/badge.svg)](https://github.com/LakshmiPriyaAnbu/mini-redis-visualizer/actions/workflows/ci.yml)
+
 A Redis-inspired in-memory key-value store built with Node.js and Angular to visualize caching, command parsing, TTL expiry, and live memory state.
 
 **Live demo:** https://mini-redis-visualizer.onrender.com
@@ -7,7 +10,7 @@ A Redis-inspired in-memory key-value store built with Node.js and Angular to vis
 
 ## Structure
 
-- `server/` — Express API with a real in-memory `Map` store, TTL sweep, and a command parser supporting strings (`SET`/`GET`/`DEL`/`EXISTS`/`EXPIRE`/`TTL`/`KEYS`/`FLUSHALL`), lists (`LPUSH`/`RPUSH`/`LPOP`/`RPOP`), hashes (`HSET`/`HGET`), and sets (`SADD`/`SMEMBERS`) — with real Redis-style `WRONGTYPE` errors when a command is used against the wrong kind of key.
+- `server/` — Express API with a real in-memory `Map` store, TTL sweep, and a command parser supporting strings (`SET`/`GET`/`DEL`/`EXISTS`/`EXPIRE`/`TTL`/`KEYS`/`FLUSHALL`/`INCR`/`DECR`), lists (`LPUSH`/`RPUSH`/`LPOP`/`RPOP`), hashes (`HSET`/`HGET`), and sets (`SADD`/`SMEMBERS`) — with real Redis-style `WRONGTYPE` errors when a command is used against the wrong kind of key.
 - `client/` — Angular 19 app: Form Mode / Command Mode / Data Types playground, a live memory table (each row's type shown as a colored badge under its key), command history with JSON export, and a plain-English explanation panel.
 
 ## Run it
@@ -18,6 +21,18 @@ npm run dev
 ```
 
 Then open http://localhost:4200. See `.claude/skills/run/SKILL.md` for details.
+
+## Tests
+
+```
+npm test
+```
+
+Runs the backend test suite (`server/test/`, using Node's built-in
+`node --test` runner — no extra dependencies) covering the store's data
+structures, TTL/expiry, `WRONGTYPE` errors, every command, and `INCR`/`DECR`.
+The same command runs in CI (see the badge above) on every push and pull
+request, alongside an Angular build check.
 
 ## Testing it yourself (manual verification guide)
 

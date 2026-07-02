@@ -10,7 +10,8 @@
   "scripts": {
     "dev": "concurrently -n SERVER,CLIENT -c green,cyan \"npm run dev -w server\" \"npm start -w client\"",
     "build": "npm run build -w client",
-    "start": "npm start -w server"
+    "start": "npm start -w server",
+    "test": "npm test -w server"
   },
   "engines": {
     "node": "20.x"

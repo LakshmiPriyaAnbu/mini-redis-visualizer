@@ -233,10 +233,32 @@ function executeCommand(store, raw) {
       return ok(formatList(members), `MiniRedis returned every member currently in set "${key}" (${members.length} total).`, 'Listed members');
     }
 
+    // ---- Counters ----
+    case 'INCR':
+    case 'DECR': {
+      if (!parts[1]) return err(`ERR missing key. Try: ${cmd} key`, `${cmd} needs a key.`, 'Missing key');
+      const key = parts[1];
+      const currentType = store.peekType(key);
+      if (currentType && currentType !== 'string') return typeMismatch(key, currentType, 'string');
+      const next = store.incrby(key, cmd === 'INCR' ? 1 : -1);
+      if (next === null) {
+        return err(
+          'ERR value is not an integer or out of range',
+          `"${key}" doesn't hold a valid integer, so it can't be ${cmd === 'INCR' ? 'incremented' : 'decremented'}.`,
+          'Not a number'
+        );
+      }
+      return ok(
+        String(next),
+        `MiniRedis ${cmd === 'INCR' ? 'incremented' : 'decremented'} "${key}" to ${next}. Redis counters like this are atomic — they back view counts, rate limiters and live metrics.`,
+        cmd === 'INCR' ? 'Incremented' : 'Decremented'
+      );
+    }
+
     default:
       return err(
         `ERR unknown command '${cmd}'. Try: SET key value`,
-        `'${cmd}' isn't a supported command. Try SET, GET, DEL, EXISTS, EXPIRE, TTL, KEYS, FLUSHALL, LPUSH, RPUSH, LPOP, RPOP, HSET, HGET, SADD or SMEMBERS.`,
+        `'${cmd}' isn't a supported command. Try SET, GET, DEL, EXISTS, EXPIRE, TTL, KEYS, FLUSHALL, LPUSH, RPUSH, LPOP, RPOP, HSET, HGET, SADD, SMEMBERS, INCR or DECR.`,
         'Invalid command'
       );
   }

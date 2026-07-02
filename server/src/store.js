@@ -122,6 +122,24 @@ class MiniRedisStore {
     return entry.value[field];
   }
 
+  // ---- Counters ----
+  // Mutates the entry in place (rather than going through set()) so an
+  // existing TTL is preserved — real Redis's INCR/DECR don't clear expiry,
+  // unlike SET. Returns the new value, or null if the current value isn't
+  // a valid integer.
+  incrby(key, delta) {
+    const entry = this.map.get(key);
+    const current = entry ? parseInt(entry.value, 10) : 0;
+    if (Number.isNaN(current)) return null;
+    const next = current + delta;
+    if (entry) {
+      entry.value = String(next);
+    } else {
+      this.map.set(key, { value: String(next), type: 'string', expiresAt: null, createdAt: Date.now() });
+    }
+    return next;
+  }
+
   // ---- Sets ----
   sadd(key, members) {
     const entry = this._getOrCreate(key, 'set', () => new Set());
